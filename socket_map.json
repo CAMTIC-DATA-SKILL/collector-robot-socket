@@ -1,0 +1,117 @@
+{
+  "framing": "crlf",
+  "max_bytes": 500,
+  "encoding": "utf-8",
+  "delimiter": ",",
+  "points": [
+    {
+      "name": "line",
+      "type": "str"
+    },
+    {
+      "name": "timestamp",
+      "index": 0,
+      "type": "str"
+    },
+    {
+      "name": "model",
+      "index": 1,
+      "type": "str"
+    },
+    {
+      "name": "seq",
+      "index": 2,
+      "type": "f64"
+    },
+    {
+      "name": "online",
+      "index": 3,
+      "type": "f64"
+    },
+    {
+      "name": "motor_state",
+      "index": 4,
+      "type": "f64"
+    },
+    {
+      "name": "power_mode",
+      "index": 5,
+      "type": "f64"
+    },
+    {
+      "name": "task_state",
+      "index": 6,
+      "type": "f64"
+    },
+    {
+      "name": "waypoint",
+      "index": 7,
+      "type": "str"
+    },
+    {
+      "name": "j1_position",
+      "index": 8,
+      "type": "f64"
+    },
+    {
+      "name": "j1_torque",
+      "index": 9,
+      "type": "f64"
+    },
+    {
+      "name": "j2_position",
+      "index": 10,
+      "type": "f64"
+    },
+    {
+      "name": "j2_torque",
+      "index": 11,
+      "type": "f64"
+    },
+    {
+      "name": "j3_position",
+      "index": 12,
+      "type": "f64"
+    },
+    {
+      "name": "j3_torque",
+      "index": 13,
+      "type": "f64"
+    },
+    {
+      "name": "j4_position",
+      "index": 14,
+      "type": "f64"
+    },
+    {
+      "name": "j4_torque",
+      "index": 15,
+      "type": "f64"
+    },
+    {
+      "name": "x",
+      "index": 16,
+      "type": "f64"
+    },
+    {
+      "name": "y",
+      "index": 17,
+      "type": "f64"
+    },
+    {
+      "name": "z",
+      "index": 18,
+      "type": "f64"
+    },
+    {
+      "name": "rz",
+      "index": 19,
+      "type": "f64"
+    },
+    {
+      "name": "last_error",
+      "index": 20,
+      "type": "str"
+    }
+  ]
+}
