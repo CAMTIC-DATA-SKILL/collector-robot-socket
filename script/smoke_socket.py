@@ -5,9 +5,13 @@
 import socket
 import threading
 
+from pydantic import ValidationError
+
 from _smoke import ROOT, SmokeAbort, SmokeRunner, expect
 from core.socket_client import SocketClient, SocketClientConfig, SocketErrorCode, SocketMap
-from model.socket_map_model import SocketMapSettings
+from model.protocol_model import MsgDataDTO, MsgSampleDTO
+from model.sample_model import Sample
+from model.socket_map_model import PointType, SocketMapSettings
 
 LINE = b"10,1.5,home\r\n9,2.0,away\n"
 
@@ -16,6 +20,7 @@ def main() -> int:
     runner = SmokeRunner("collector-robot-soket")
     try:
         runner.check("scara map loads", _load_map, required=True)
+        runner.check("addr defaults to the point name", _addr_key, required=True)
         runner.check("empty points become the whole line", _empty_points)
         server, port = _serve(LINE)
         try:
@@ -36,13 +41,41 @@ def _load_map() -> str:
     expect(socket_map.settings.framing.value, "crlf")
     expect(socket_map.settings.max_bytes, 500)
     expect(len(socket_map.settings.points), 22)
+    expect([p.addr for p in socket_map.settings.points], [p.name for p in socket_map.settings.points])
     return socket_map.describe_plan().split(":", 1)[0]
+
+
+def _addr_key() -> str:
+    settings = SocketMapSettings.model_validate(
+        {"points": [{"name": "seq", "index": 2, "type": "f64"}, {"name": "speed", "addr": "tcp_speed", "index": 1}]}
+    )
+    expect(settings.points[0].addr, "seq")
+    expect(settings.points[1].addr, "tcp_speed")
+    try:
+        SocketMapSettings.model_validate(
+            {"points": [{"name": "a", "addr": "same"}, {"name": "b", "addr": "same"}]}
+        )
+    except ValidationError:
+        pass
+    else:
+        raise AssertionError("중복 addr 이 통과했다")
+    sample = Sample(addr="tcp_speed", name="speed", index=1, type=PointType.F64, value=1.5, error=None)
+    body = MsgDataDTO(
+        device_key="scara-1",
+        sample_ms=1,
+        samples=[MsgSampleDTO.model_validate(sample.model_dump())],
+    )
+    wire = body.model_dump(mode="json")["samples"][0]
+    expect(wire["addr"], "tcp_speed")
+    expect(wire["name"], "speed")
+    return wire["addr"]
 
 
 def _empty_points() -> str:
     settings = SocketMapSettings.model_validate({"points": []})
     point = settings.points[0]
     expect(point.name, "line")
+    expect(point.addr, "line")
     expect(point.index, None)
     return point.type.value
 
@@ -78,7 +111,7 @@ def _map() -> SocketMapSettings:
             "max_bytes": 64,
             "points": [
                 {"name": "line", "type": "str"},
-                {"name": "seq", "index": 0, "type": "i64"},
+                {"name": "seq", "addr": "cycle", "index": 0, "type": "i64"},
                 {"name": "speed", "index": 1, "type": "f64", "scale": 0.1},
                 {"name": "waypoint", "index": 2, "type": "str"},
             ],
@@ -94,7 +127,9 @@ def _read(port: int) -> str:
     finally:
         client.close()
     expect(first["line"].value, "10,1.5,home")
+    expect(first["line"].addr, "line")
     expect(first["seq"].value, 10)
+    expect(first["seq"].addr, "cycle")
     expect(round(first["speed"].value, 10), 0.15)
     expect(first["waypoint"].value, "home")
     expect(second["seq"].value, 9)
@@ -117,6 +152,7 @@ def _missing(port: int) -> str:
         server.close()
     expect(sample.error, SocketErrorCode.FIELD_MISSING.value)
     expect(sample.value, None)
+    expect(sample.addr, "only")
     return sample.error or ""
 
 

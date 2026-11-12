@@ -53,16 +53,21 @@ class SocketMap:
                 raw = frame if point.index is None else _field(point, fields)
                 value = _coerce(point, raw)
             except SocketClientError as e:
-                samples.append(Sample(name=point.name, index=point.index, type=point.type, value=None, error=e.code.value))
+                samples.append(_sample(point, value=None, error=e.code.value))
                 continue
-            samples.append(Sample(name=point.name, index=point.index, type=point.type, value=value, error=None))
+            samples.append(_sample(point, value=value, error=None))
         logger.debug("frame %r -> %d points", frame, len(samples))
         return samples
 
 
+def _sample(point: SocketPoint, *, value: int | float | str | bool | None, error: str | None) -> Sample:
+    return Sample(addr=point.addr, name=point.name, index=point.index, type=point.type, value=value, error=error)
+
+
 def _point_label(point: SocketPoint) -> str:
     where = "line" if point.index is None else str(point.index)
-    return f"{point.name}[{where}]"
+    key = point.name if point.addr == point.name else f"{point.name}={point.addr}"
+    return f"{key}[{where}]"
 
 
 def _split(frame: str, delimiter: str) -> list[str]:

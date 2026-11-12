@@ -8,6 +8,7 @@ framing:
   fixed max_bytes 만큼
 delimiter 로 칸을 나누고 points.index 가 그 칸이다. index 를 비우면 프레임 전체다.
 points 를 비우면 프레임 전체를 line 이라는 이름으로 낸다.
+addr 은 게이트웨이 조회 키다. 비우면 name 을 쓴다. index 는 프레임 안에서만 쓴다.
 """
 from enum import Enum
 
@@ -35,19 +36,44 @@ class PointType(str, Enum):
 
 
 class SocketPoint(BaseModel):
-    """프레임 안의 칸 하나. index 가 없으면 구분자로 나누기 전의 한 줄이다."""
+    """프레임 안의 칸 하나. index 가 없으면 구분자로 나누기 전의 한 줄이다.
+
+    addr 은 샘플에 실리는 조회 키다. 맵에서 비우면 name 과 같다.
+    """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     name: str
+    addr: str
     index: int | None = None
     type: PointType = PointType.STR
     scale: float | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def _default_addr(cls, data: object) -> object:
+        if not isinstance(data, dict):
+            return data
+        addr = data.get("addr")
+        if isinstance(addr, str) and addr.strip():
+            if addr == addr.strip():
+                return data
+            filled = dict(data)
+            filled["addr"] = addr.strip()
+            return filled
+        name = data.get("name")
+        if not isinstance(name, str) or not name.strip():
+            return data
+        filled = dict(data)
+        filled["addr"] = name.strip()
+        return filled
 
     @model_validator(mode="after")
     def _check(self) -> "SocketPoint":
         if not self.name or any(ch not in _NAME_CHARS for ch in self.name):
             raise ValueError(f"포인트 이름은 영숫자/_/- 만 쓴다: {self.name!r}")
+        if not self.addr or any(ch not in _NAME_CHARS for ch in self.addr):
+            raise ValueError(f"{self.name}: 주소는 영숫자/_/- 만 쓴다: {self.addr!r}")
         if self.index is not None and self.index < 0:
             raise ValueError(f"{self.name}: index 는 0 이상")
         if self.scale is not None and not self.type.numeric:
@@ -81,4 +107,8 @@ class SocketMapSettings(BaseModel):
         duplicated = sorted({n for n in names if names.count(n) > 1})
         if duplicated:
             raise ValueError(f"포인트 이름 중복: {duplicated}")
+        addrs = [p.addr for p in self.points]
+        duplicated_addrs = sorted({a for a in addrs if addrs.count(a) > 1})
+        if duplicated_addrs:
+            raise ValueError(f"포인트 주소 중복: {duplicated_addrs}")
         return self

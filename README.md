@@ -63,7 +63,7 @@ python -m core.zeromq_client --device-key scara-1
   "request": null,
   "points": [
     {"name": "line", "type": "str"},
-    {"name": "seq", "index": 0, "type": "f64"}
+    {"name": "seq", "addr": "seq", "index": 0, "type": "f64"}
   ]
 }
 ```
@@ -74,7 +74,8 @@ python -m core.zeromq_client --device-key scara-1
 | `max_bytes` | 프레임 상한. `fixed` 는 이 길이만큼 읽는다 |
 | `delimiter` | 칸 구분자. 빈 문자열이면 공백. 줄 끝 문자는 넣지 않는다 |
 | `request` | 읽기 전에 보낼 문자열. 줄 끝은 framing 에 맞춰 붙인다. 없으면 보내지 않는다 |
-| `index` | 0부터. 비우면 나누기 전 프레임 전체 |
+| `addr` | 게이트웨이 조회 키. 비우면 `name`. 샘플의 `addr` 로 나간다. 영숫자/`_`/`-` |
+| `index` | 0부터. 프레임 안에서 칸을 고른다. 비우면 나누기 전 프레임 전체. 조회 키가 아니다 |
 | `type` | `bool` `i64` `f64` `str` |
 | `scale` | 숫자 칸에만. 읽은 값에 곱한다 |
 
@@ -98,7 +99,7 @@ python -m core.zeromq_client --device-key scara-1
     "device_key": "scara-1",
     "sample_ms": 1760236380000,
     "samples": [
-      {"name": "seq", "index": 2, "type": "f64", "value": 3.0, "error": null}
+      {"addr": "seq", "name": "seq", "index": 2, "type": "f64", "value": 3.0, "error": null}
     ],
     "sockets": []
   }

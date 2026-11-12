@@ -1,7 +1,7 @@
 """게이트웨이 ↔ collector 프로토콜 DTO. collector-robot-modbus 와 같은 헤더를 쓴다.
 
 ZeroMQ multipart [topic, ProtocolHeaderDTO JSON].
-data 본문의 samples 는 소켓 프레임의 칸이다. sockets 는 항상 빈 목록이다.
+data 본문의 samples 는 소켓 프레임의 칸이다. 조회 키는 addr 이고 sockets 는 항상 빈 목록이다.
 """
 from enum import Enum
 from uuid import UUID
@@ -72,6 +72,9 @@ class MsgHealthDTO(BaseModel):
 
 
 class MsgSampleDTO(BaseModel):
+    """게이트웨이 조회 키는 addr. index 는 프레임 칸이라 미들웨어는 읽지 않는다."""
+
+    addr: str
     name: str
     index: int | None = None
     type: PointType
